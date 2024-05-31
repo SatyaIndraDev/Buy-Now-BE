@@ -57,17 +57,36 @@ ProductRouter.delete("/:id", async(req,res) => {
 
 
 
-ProductRouter.get("/:id",async(req,res)=>{ // to get a particular post
-    const {id}=req.params;
+
+ProductRouter.get('/products', async (req, res) => {
     try {
-        const post = await postModel.findOne({ _id: id });
-        res.status(200).send(post)
+      const { search, rating, priceMin, priceMax, sortField, sortOrder } = req.query;
+  
+      let filter = {};
+      if (search) {
+        filter.name = { $regex: search, $options: 'i' };
+      }
+      if (rating) {
+        filter.rating = parseInt(rating);
+      }
+      if (priceMin) {
+        filter.price = { ...filter.price, $gte: parseFloat(priceMin) };
+      }
+      if (priceMax) {
+        filter.price = { ...filter.price, $lte: parseFloat(priceMax) };
+      }
+  
+      let sort = {};
+      if (sortField) {
+        sort[sortField] = sortOrder === 'desc' ? -1 : 1;
+      }
+  
+      const products = await ProductsModel.find(filter).sort(sort);
+      res.json(products);
     } catch (error) {
-        res.status(500).send({ "error": "Internal Server Error" })
+      res.status(500).json({ message: error.message });
     }
-})
-
-
+  });
 module.exports = {
     ProductRouter
 }
